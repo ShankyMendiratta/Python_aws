@@ -1,0 +1,42 @@
+import os
+import boto3
+from botocore.exceptions import ClientError
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('info')
+
+os.environ['AWS_PROFILE'] = 'ss-dev-read-1234567890'
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
+
+class GlueW:
+    def __init__(self,glue_client):
+        self.glue_client = glue_client
+    
+    def create_job(self,name, description, role_arn, script_location):
+        try:
+            self.glue_client.create_job(Name=name,Description=description, Role=role_arn,
+                                        Command = {
+                                            "Name": "glueetl",
+                                            "ScriptLocation": script_location,
+                                            "PythonVersion": "3",
+                                            
+                                        },
+                                        GlueVersion="3.0",
+                                        Tags={
+                                            'string': 'string'
+                                           }
+                                    )
+            
+        except ClientError as err:
+
+            logger.error("Couldn't create job %s because %s %s",
+                         name,
+                         err.response["Error"]["Code"],
+                         err.response["Error"]["Message"],
+                         )
+            raise
+                    
+myc_instance = GlueW(boto3.client('glue','us-east-1'))
+myc_instance.create_job('name','description','role_arn','script_location')
