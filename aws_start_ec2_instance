@@ -1,0 +1,33 @@
+import boto3
+import logging
+from botocore.exceptions import ClientError
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('info')
+
+class InstanceWrapper:
+    def __init__(self, ec2_resource,instance=None):
+        self.ec2_resource = ec2_resource
+        self.instance = instance
+
+    @classmethod
+    def from_resource(cls):
+        ec2_resource = boto3.resource('ec2') 
+        return cls(ec2_resource)   
+    
+    def start_instance(self):
+        if self.instance is None:
+            logger.info('No instance to start')
+            return
+        try:
+            response = self.instance.start()
+            self.instance.wait_until_running()
+        except ClientError as err:
+            logger.error(
+                "Couldnt start %s because %s %s, 
+                self.instance.id,
+                err.response["Error"]["Code"],
+                err.response["Error"]["Message"] )    
+            raise
+        else:
+            return response
